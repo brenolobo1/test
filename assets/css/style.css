@@ -1,0 +1,155 @@
+:root {
+  --color-bg: #f5f5f7;
+  --color-text: #1d1d1f;
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --drawer-width: 360px;
+  --overlay-color: rgba(0, 0, 0, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.page-header {
+  padding: 48px 32px 24px;
+  text-align: center;
+}
+
+.page-header h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+}
+
+.page-header p {
+  margin: 0 0 20px;
+  color: #555;
+}
+
+.page-content {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 32px 64px;
+  line-height: 1.6;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-hover);
+}
+
+/* Overlay */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-color);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  z-index: 10;
+}
+
+.overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Drawer */
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: var(--drawer-width);
+  max-width: 90vw;
+  background: #fff;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.15);
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #eee;
+}
+
+.drawer-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.btn-close:hover {
+  background: #f0f0f0;
+}
+
+.drawer-body {
+  padding: 24px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+
+.drawer-body ul {
+  padding-left: 20px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #1d1d1f;
+    --color-text: #f5f5f7;
+  }
+
+  .drawer {
+    background: #2c2c2e;
+  }
+
+  .drawer-header {
+    border-bottom-color: #3a3a3c;
+  }
+
+  .btn-close:hover {
+    background: #3a3a3c;
+  }
+
+  .page-header p {
+    color: #aaa;
+  }
+}
