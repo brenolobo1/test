@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PC Booster — Protótipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   TOKENS — ExitLag Design System (references/design-tokens.md)
+   ========================================================================== */
+:root{
+  /* base */
+  --base-100:#EBECED; --base-200:#878D97; --base-300:#555C68; --base-400:#313741;
+  --base-500:#242933; --base-600:#191D24; --base-700:#111317; --base-800:#0B0C0F;
+  /* auxiliares */
+  --spark:#CEF953; --lime:#8DDD2B; --breeze:#22EBA3; --lumen:#22EBDF;
+  --nebula:#4083FF; --aurora:#9F22EB; --pulse:#EB229B; --eclipse:#EB8322; --radiance:#EED80E;
+  /* main */
+  --primary:#F52929; --primary-light:#EC4046;
+  /* radius */
+  --r-sm:4px; --r-md:8px; --r-lg:12px; --r-pill:16px;
+  /* spacing */
+  --s-xs:4px; --s-sm:8px; --s-md:12px; --s-lg:16px; --s-xl:24px; --s-xxl:32px; --s-xxxl:36px;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:Ubuntu,-apple-system,"Segoe UI",Roboto,sans-serif;
+  background:var(--base-800);
+  color:var(--base-100);
+  font-size:14px;
+  line-height:1.3;
+}
+
+/* tipografia */
+.heading-lg{font-size:24px;font-weight:500;line-height:1.1;margin:0}
+.heading-md{font-size:18px;font-weight:500;line-height:1.1;margin:0}
+.heading-sm{font-size:16px;font-weight:500;line-height:1.1;margin:0}
+.body-lg{font-size:14px;font-weight:500;line-height:1.3;margin:0}
+.body-md{font-size:14px;font-weight:400;line-height:1.3;margin:0}
+.body-sm{font-size:12px;font-weight:500;line-height:1.3;margin:0}
+.body-xs{font-size:12px;font-weight:400;line-height:1.3;margin:0}
+.muted{color:var(--base-200)}
+.dim{color:var(--base-300)}
+
+/* placeholder de copy — texto provisório, não é microcopy final */
+.ph{color:var(--base-200)}
+.ph-label{color:var(--base-200);border-bottom:1px dashed var(--base-400)}
+.ph-tag{
+  display:inline-block;font-size:10px;font-weight:400;letter-spacing:.04em;
+  color:var(--base-300);border:1px dashed var(--base-400);border-radius:var(--r-sm);
+  padding:1px 5px;text-transform:uppercase;vertical-align:middle;
+}
+
+/* ==========================================================================
+   PAINEL DE TESTE — fora do protótipo
+   ========================================================================== */
+.devbar{
+  position:sticky;top:0;z-index:80;
+  background:repeating-linear-gradient(135deg,#1a1206,#1a1206 10px,#15100a 10px,#15100a 20px);
+  border-bottom:1px solid var(--eclipse);
+  padding:var(--s-md) var(--s-xl);
+  display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-lg);
+}
+.devbar__title{color:var(--eclipse);font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase}
+.devbar__group{display:flex;align-items:center;gap:var(--s-sm)}
+.devbar__legend{font-size:12px;color:var(--base-300);margin-left:auto}
+.seg{display:flex;background:var(--base-700);border:1px solid var(--base-400);border-radius:var(--r-md);overflow:hidden}
+.seg button{
+  appearance:none;border:0;background:transparent;color:var(--base-200);
+  font-family:inherit;font-size:12px;font-weight:500;padding:7px 14px;cursor:pointer;
+  border-right:1px solid var(--base-400);transition:.15s;
+}
+.seg button:last-child{border-right:0}
+.seg button:hover{color:var(--base-100);background:var(--base-600)}
+.seg button[aria-pressed="true"]{background:var(--primary);color:#fff}
+
+/* ==========================================================================
+   FRAME DO APP
+   ========================================================================== */
+.stage{padding:var(--s-xl);display:flex;justify-content:center}
+.app{
+  width:100%;max-width:1080px;min-height:720px;
+  background:var(--base-700);
+  border:1px solid var(--base-400);
+  border-radius:var(--r-lg);
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.app__topbar{
+  display:flex;align-items:center;gap:var(--s-sm);
+  padding:var(--s-md) var(--s-xl);
+  border-bottom:1px solid var(--base-400);
+  background:var(--base-800);
+}
+.logo{font-size:14px;font-weight:700;letter-spacing:.02em}
+.logo span{color:var(--primary)}
+.app__topbar .sep{width:1px;height:14px;background:var(--base-400);margin:0 var(--s-sm)}
+.app__body{flex:1;overflow:auto;position:relative}
+.screen{padding:var(--s-xl)}
+
+/* ==========================================================================
+   CARDS / SUPERFÍCIES
+   ========================================================================== */
+.card{
+  background:var(--base-600);
+  border:1px solid var(--base-400);
+  border-radius:var(--r-lg);
+  padding:var(--s-lg);
+}
+.section{margin-bottom:var(--s-xl)}
+.section__head{display:flex;align-items:center;justify-content:space-between;gap:var(--s-md);margin-bottom:var(--s-md)}
+.stack-sm{display:flex;flex-direction:column;gap:var(--s-sm)}
+.stack-md{display:flex;flex-direction:column;gap:var(--s-md)}
+.row{display:flex;align-items:center;gap:var(--s-sm)}
+.row-between{display:flex;align-items:center;justify-content:space-between;gap:var(--s-lg)}
+.divider{height:1px;background:var(--base-400);margin:var(--s-lg) 0}
+
+/* hardware */
+.hw-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s-md)}
+.hw-item{background:var(--base-500);border-radius:var(--r-md);padding:var(--s-md)}
+.hw-item__label{font-size:12px;font-weight:500;color:var(--base-200);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--s-xs)}
+.hw-item__value{font-size:14px;font-weight:500}
+.hw-item__meta{font-size:12px;color:var(--base-300);margin-top:2px}
+
+/* ==========================================================================
+   BADGES
+   ========================================================================== */
+.badge{
+  display:inline-flex;align-items:center;gap:var(--s-xs);
+  font-size:12px;font-weight:500;line-height:1;
+  padding:5px 10px;border-radius:var(--r-pill);
+  border:1px solid transparent;white-space:nowrap;
+}
+.badge--ok{color:var(--breeze);background:rgba(34,235,163,.10);border-color:rgba(34,235,163,.45)}
+.badge--warn{color:var(--radiance);background:rgba(238,216,14,.10);border-color:rgba(238,216,14,.45)}
+.badge--danger{color:var(--primary);background:rgba(245,41,41,.10);border-color:rgba(245,41,41,.45)}
+.badge--neutral{color:var(--base-200);background:var(--base-500);border-color:var(--base-400)}
+.badge--live{color:var(--nebula);background:rgba(64,131,255,.10);border-color:rgba(64,131,255,.45)}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block}
+
+/* ==========================================================================
+   BOTÕES
+   ========================================================================== */
+.btn{
+  appearance:none;font-family:inherit;font-size:14px;font-weight:500;
+  padding:10px 16px;border-radius:var(--r-md);cursor:pointer;
+  border:1px solid transparent;transition:.15s;display:inline-flex;align-items:center;gap:var(--s-sm);
+}
+.btn--primary{background:var(--primary);color:#fff}
+.btn--primary:hover{background:var(--primary-light)}
+.btn--ghost{background:transparent;color:var(--base-100);border-color:var(--base-400)}
+.btn--ghost:hover{background:var(--base-500)}
+.btn--danger{background:transparent;color:var(--primary);border-color:rgba(245,41,41,.45)}
+.btn--danger:hover{background:rgba(245,41,41,.10)}
+.btn--sm{padding:7px 12px;font-size:12px}
+.btn--link{background:none;border:0;color:var(--base-200);padding:0;font-size:12px;text-decoration:underline;cursor:pointer;font-family:inherit}
+
+/* ==========================================================================
+   TOGGLE
+   ========================================================================== */
+.switch{display:inline-flex;align-items:center;gap:var(--s-md);cursor:pointer;user-select:none}
+.switch__track{
+  width:44px;height:24px;border-radius:var(--r-pill);
+  background:var(--base-400);position:relative;transition:.18s;flex:none;
+}
+.switch__thumb{
+  position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;
+  background:var(--base-100);transition:.18s;
+}
+.switch[aria-checked="true"] .switch__track{background:var(--primary)}
+.switch[aria-checked="true"] .switch__thumb{left:23px;background:#fff}
+.switch__label{font-size:14px;font-weight:500}
+
+/* ==========================================================================
+   LISTA DE JOGOS
+   ========================================================================== */
+.game{
+  background:var(--base-600);border:1px solid var(--base-400);border-radius:var(--r-lg);
+  transition:.15s;
+}
+.game--clickable{cursor:pointer}
+.game--clickable:hover{border-color:var(--base-300);background:var(--base-500)}
+.game.is-open{border-color:var(--nebula)}
+.game__row{display:flex;align-items:center;gap:var(--s-lg);padding:var(--s-lg)}
+.game__thumb{
+  width:52px;height:52px;border-radius:var(--r-md);flex:none;
+  background:var(--base-500);border:1px dashed var(--base-400);
+  display:flex;align-items:center;justify-content:center;color:var(--base-300);font-size:10px;
+}
+.game__info{flex:1;min-width:0}
+.game__name{font-size:16px;font-weight:500;margin-bottom:var(--s-xs)}
+.game__meta{font-size:12px;color:var(--base-300)}
+.game__side{display:flex;align-items:center;gap:var(--s-md);flex:none}
+.chev{color:var(--base-300);font-size:18px;line-height:1}
+
+/* ==========================================================================
+   ALERTA DE HARDWARE — 3 níveis de gravidade
+   ========================================================================== */
+.alert{border-radius:var(--r-lg);border:1px solid;padding:var(--s-lg);display:flex;gap:var(--s-md)}
+.alert__icon{width:24px;height:24px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.alert--leve{border-color:rgba(238,216,14,.45);background:rgba(238,216,14,.07)}
+.alert--leve .alert__icon{background:var(--radiance);color:var(--base-800)}
+.alert--leve .alert__level{color:var(--radiance)}
+.alert--moderado{border-color:rgba(235,131,34,.45);background:rgba(235,131,34,.07)}
+.alert--moderado .alert__icon{background:var(--eclipse);color:var(--base-800)}
+.alert--moderado .alert__level{color:var(--eclipse)}
+.alert--severo{border-color:rgba(245,41,41,.5);background:rgba(245,41,41,.08)}
+.alert--severo .alert__icon{background:var(--primary);color:#fff}
+.alert--severo .alert__level{color:var(--primary)}
+.alert__level{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.06em}
+
+/* tabela de requisitos */
+.req{width:100%;border-collapse:collapse;margin-top:var(--s-md);font-size:12px}
+.req th{
+  text-align:left;font-weight:500;color:var(--base-200);text-transform:uppercase;letter-spacing:.05em;
+  padding:var(--s-sm) var(--s-md);border-bottom:1px solid var(--base-400);font-size:11px;
+}
+.req td{padding:var(--s-sm) var(--s-md);border-bottom:1px solid rgba(49,55,65,.6)}
+.req tr:last-child td{border-bottom:0}
+.req .col-you{font-weight:500}
+.req .fail{color:var(--primary)}
+.req .warn{color:var(--eclipse)}
+.req .pass{color:var(--breeze)}
+.req__source{margin-top:var(--s-sm);font-size:11px;color:var(--base-300)}
+
+/* ==========================================================================
+   CAMADAS + AJUSTES
+   ========================================================================== */
+.layer{display:flex;align-items:center;gap:var(--s-md);padding:var(--s-md);background:var(--base-500);border-radius:var(--r-md)}
+.layer__icon{width:28px;height:28px;border-radius:var(--r-sm);background:var(--base-600);display:flex;align-items:center;justify-content:center;flex:none;font-size:13px}
+.layer__txt{flex:1;min-width:0}
+.layer__name{font-size:12px;font-weight:500}
+.layer__desc{font-size:12px;color:var(--base-300);margin-top:2px}
+.layer--off{opacity:.5}
+
+.adj{display:flex;flex-direction:column;gap:2px}
+.adj__item{display:flex;align-items:center;gap:var(--s-md);padding:var(--s-sm) var(--s-md);border-radius:var(--r-sm);background:var(--base-500)}
+.adj__name{flex:1;font-size:12px}
+.adj__val{font-size:12px;font-weight:500}
+.adj__val--down{color:var(--eclipse)}
+.adj__val--keep{color:var(--breeze)}
+.adj__val--ph{color:var(--base-300);border-bottom:1px dashed var(--base-400)}
+.adj__tag{font-size:10px;color:var(--base-300);text-transform:uppercase;letter-spacing:.05em;width:66px;text-align:right}
+
+.metric{display:flex;align-items:center;gap:var(--s-md);padding:var(--s-md);background:var(--base-500);border-radius:var(--r-md)}
+.metric__label{font-size:12px;color:var(--base-200);flex:1}
+.metric__from{font-size:14px;color:var(--base-300);text-decoration:line-through}
+.metric__arrow{color:var(--base-300)}
+.metric__to{font-size:16px;font-weight:500;color:var(--breeze)}
+
+/* mensagens de estado */
+.msg{display:flex;gap:var(--s-sm);padding:var(--s-md);border-radius:var(--r-md);font-size:12px;line-height:1.35;border:1px solid}
+.msg--info{border-color:rgba(64,131,255,.4);background:rgba(64,131,255,.07);color:var(--base-100)}
+.msg--success{border-color:rgba(34,235,163,.4);background:rgba(34,235,163,.07);color:var(--base-100)}
+.msg--neutral{border-color:var(--base-400);background:var(--base-500);color:var(--base-200)}
+.msg__icon{flex:none;font-weight:700}
+
+/* ==========================================================================
+   DRAWER (modo B)
+   ========================================================================== */
+.overlay{
+  position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:40;
+  opacity:0;pointer-events:none;transition:.2s;
+}
+.overlay.is-open{opacity:1;pointer-events:auto}
+.drawer{
+  position:absolute;top:0;right:0;bottom:0;width:min(520px,88%);
+  background:var(--base-700);border-left:1px solid var(--base-400);z-index:50;
+  transform:translateX(100%);transition:transform .22s ease;
+  display:flex;flex-direction:column;
+}
+.drawer.is-open{transform:translateX(0)}
+.drawer__head{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s-md);
+  padding:var(--s-lg);border-bottom:1px solid var(--base-400);
+}
+.drawer__body{flex:1;overflow:auto;padding:var(--s-lg)}
+.btn-close{
+  appearance:none;background:transparent;border:1px solid var(--base-400);color:var(--base-100);
+  width:32px;height:32px;border-radius:var(--r-md);cursor:pointer;font-size:16px;line-height:1;
+}
+.btn-close:hover{background:var(--base-500)}
+
+/* ajuste de densidade dentro do drawer (largura menor) */
+.drawer .req th,.drawer .req td{padding:var(--s-sm) 6px}
+.drawer .layer{align-items:flex-start}
+.drawer .row-between{align-items:flex-start}
+
+/* modo C — inline */
+.game__expand{border-top:1px solid var(--base-400);padding:var(--s-lg);background:var(--base-700)}
+
+/* utilidades */
+[hidden]{display:none !important}
+.spacer{flex:1}
+</style>
+</head>
+<body data-mode="fullscreen">
+
+<!-- ====== PAINEL DE TESTE (fora do protótipo) ====== -->
+<div class="devbar">
+  <span class="devbar__title">⚙ Painel de teste · fora do protótipo</span>
+  <div class="devbar__group">
+    <span class="body-xs muted">Navegação:</span>
+    <div class="seg" id="modeSwitch">
+      <button data-mode="fullscreen" aria-pressed="true">A · Tela cheia</button>
+      <button data-mode="drawer" aria-pressed="false">B · Drawer lateral</button>
+      <button data-mode="inline" aria-pressed="false">C · Card expansível</button>
+    </div>
+  </div>
+  <div class="devbar__group">
+    <button class="btn btn--ghost btn--sm" id="resetState">Resetar protótipo</button>
+  </div>
+  <span class="devbar__legend">Texto em <span class="ph-label">cinza pontilhado</span> = placeholder de copy · dados mockados</span>
+</div>
+
+<!-- ====== APP ====== -->
+<div class="stage">
+  <div class="app">
+    <div class="app__topbar">
+      <span class="logo">EXIT<span>LAG</span></span>
+      <span class="sep"></span>
+      <span class="body-sm muted">PC Booster</span>
+    </div>
+    <div class="app__body">
+      <div id="mainScreen"></div>
+      <div id="detailScreen" hidden></div>
+      <div class="overlay" id="overlay"></div>
+      <aside class="drawer" id="drawer" aria-hidden="true">
+        <div class="drawer__head">
+          <div>
+            <div class="heading-sm" id="drawerTitle">—</div>
+            <div class="body-xs dim" id="drawerSub">—</div>
+          </div>
+          <button class="btn-close" data-action="close-detail" aria-label="Fechar">✕</button>
+        </div>
+        <div class="drawer__body" id="drawerBody"></div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
