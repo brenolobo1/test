@@ -31,7 +31,30 @@ A barra listrada no topo **não faz parte da interface**. Serve para comparar as
 | **B · Drawer lateral** | O jogo abre num painel lateral sobre a lista |
 | **C · Card expansível** | O jogo expande inline, tudo numa tela só |
 
+O seletor **Visão** alterna entre o **Protótipo** (o fluxo com dados mockados) e o **Wireframe**
+(estudo de estrutura em escala de cinza — 3 disposições por tela, sem cor, copy ou dado). No modo
+Wireframe o seletor de navegação fica desabilitado, já que os 3 modos A/B/C estão fora daquele escopo.
+
 O botão *Resetar protótipo* volta todos os toggles ao estado inicial.
+
+## Estudo de wireframe
+
+Três disposições alternativas por tela, variando ordem/hierarquia, posição dos CTAs e agrupamento:
+
+| Tela 1 | Variação |
+|---|---|
+| **1A · Linear** | Ordem direta, CTAs dentro dos cards, ação global no fim |
+| **1B · Lista dominante** | Cabeçalho + hardware agrupados num resumo; ação global vira barra fixa |
+| **1C · Tarefa primeiro** | Lista no topo; hardware desce e é agrupado com a ação global |
+
+| Tela 2 | Variação |
+|---|---|
+| **2A · Linear** | Diagnóstico → controle → resultado → reversão, CTAs dentro dos cards |
+| **2B · Controle no topo** | Toggle sobe para junto do cabeçalho; reversão vira barra fixa |
+| **2C · Duas colunas** | Diagnóstico à esquerda, ação e resultado à direita |
+
+Blocos condicionais (*alerta de hardware*, *o que foi ajustado*) aparecem com borda tracejada e chip
+`condicional`. Pontos de ação — toggle, botões, chevron — são marcados com chip preenchido.
 
 ## Convenções
 
@@ -60,3 +83,5 @@ O botão *Resetar protótipo* volta todos os toggles ao estado inicial.
 - `index.html` — shell, tokens e componentes CSS
 - `assets/js/data.js` — todos os dados mockados
 - `assets/js/app.js` — estado, render e os 3 modos de navegação
+- `assets/js/wireframe.js` — estudo de wireframe (blocos, artboards, as 6 disposições)
+- `docs/fluxo-pc-booster.md` — especificação do fluxo, autocontida para análise

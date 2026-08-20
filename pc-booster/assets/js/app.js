@@ -4,6 +4,7 @@
    ========================================================================== */
 
 const state = {
+  view: 'proto',             // proto | wire  — alternado no painel de teste
   mode: 'fullscreen',        // fullscreen | drawer | inline
   selectedId: null,
   optimized: {},             // { [gameId]: true }
@@ -316,6 +317,18 @@ function renderAdjustments(g) {
 
 function render() {
   document.body.dataset.mode = state.mode;
+
+  // estudo de wireframe substitui o protótipo por inteiro
+  const wire = state.view === 'wire';
+  $('#wireStage').hidden = !wire;
+  $('#appFrame').hidden = wire;
+  $('#navGroup').style.opacity = wire ? '.35' : '';
+  $('#navGroup').style.pointerEvents = wire ? 'none' : '';
+  if (wire) {
+    $('#wireStage').innerHTML = renderWireframe();
+    return;
+  }
+
   const g = state.selectedId ? game(state.selectedId) : null;
 
   $('#mainScreen').innerHTML = renderMain();
@@ -429,6 +442,15 @@ $('#modeSwitch').addEventListener('click', (e) => {
   state.selectedId = null;
   state.confirm = null;
   [...$('#modeSwitch').children].forEach(b =>
+    b.setAttribute('aria-pressed', String(b === btn)));
+  render();
+});
+
+$('#viewSwitch').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-view]');
+  if (!btn) return;
+  state.view = btn.dataset.view;
+  [...$('#viewSwitch').children].forEach(b =>
     b.setAttribute('aria-pressed', String(b === btn)));
   render();
 });

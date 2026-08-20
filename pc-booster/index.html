@@ -294,6 +294,102 @@ body{
 /* modo C — inline */
 .game__expand{border-top:1px solid var(--base-400);padding:var(--s-lg);background:var(--base-700)}
 
+/* ==========================================================================
+   ESTUDO DE WIREFRAME — escala de cinza pura, sem cor de marca
+   ========================================================================== */
+.wf{
+  --wf-canvas:#E4E4E4; --wf-board:#FFFFFF; --wf-fill:#F3F3F3;
+  --wf-line:#A2A2A2; --wf-line-strong:#333333; --wf-text:#454545; --wf-text-dim:#8A8A8A;
+  background:var(--wf-canvas);color:var(--wf-text);
+  border-radius:var(--r-lg);padding:var(--s-xl);
+  font-size:12px;
+}
+.wf-legend{
+  display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-lg);
+  padding-bottom:var(--s-lg);margin-bottom:var(--s-xl);
+  border-bottom:1px solid var(--wf-line);
+}
+.wf-legend__item{display:inline-flex;align-items:center;gap:6px;color:var(--wf-text)}
+.wf-legend__note{margin-left:auto;color:var(--wf-text-dim);font-style:italic}
+.wf-swatch{width:22px;height:14px;background:var(--wf-fill);border:1px solid var(--wf-line);border-radius:2px;display:inline-block}
+.wf-swatch--cond{background:transparent;border-style:dashed}
+.wf-swatch--bar{background:var(--wf-fill);border:1px solid var(--wf-line);border-top:2px solid var(--wf-line-strong)}
+
+.wf-screen{margin-bottom:var(--s-xxl)}
+.wf-screen:last-child{margin-bottom:0}
+.wf-screen__title{
+  font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--wf-text);margin:0 0 var(--s-lg);
+  padding-bottom:var(--s-sm);border-bottom:1px solid var(--wf-line);
+}
+.wf-boards{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s-xl);align-items:start}
+
+.wf-board__label{display:flex;align-items:baseline;gap:var(--s-sm);margin-bottom:2px}
+.wf-board__id{
+  font-size:11px;font-weight:700;letter-spacing:.08em;
+  background:var(--wf-line-strong);color:var(--wf-board);
+  padding:2px 6px;border-radius:2px;
+}
+.wf-board__title{font-size:13px;font-weight:500;color:var(--wf-text)}
+.wf-board__note{color:var(--wf-text-dim);line-height:1.45;margin-bottom:var(--s-md);min-height:52px}
+.wf-board__frame{
+  background:var(--wf-board);border:1px solid var(--wf-line-strong);border-radius:3px;
+  height:520px;display:flex;flex-direction:column;overflow:hidden;
+}
+.wf-board__chrome{height:18px;border-bottom:1px solid var(--wf-line);background:var(--wf-fill);flex:none}
+.wf-board__body{flex:1;overflow:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+
+.wf-block{
+  background:var(--wf-fill);border:1px solid var(--wf-line);border-radius:2px;
+  padding:8px 10px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+  flex:none;
+}
+.wf-block--cond{background:transparent;border-style:dashed}
+.wf-block--cta{border-color:var(--wf-line-strong);border-width:2px}
+.wf-block--list{flex-direction:column;align-items:stretch;gap:6px}
+.wf-block--stack{flex-direction:column;align-items:stretch}
+.wf-block__name{color:var(--wf-text);line-height:1.3}
+.wf-block__head{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%}
+.wf-block__tags{display:flex;gap:4px;flex:none}
+
+.wf-row{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  background:var(--wf-board);border:1px solid var(--wf-line);border-radius:2px;padding:8px;
+}
+.wf-row__slot{flex:1;height:8px;background:var(--wf-fill);border-radius:1px}
+
+.wf-sub{
+  margin-top:8px;padding:6px 8px;color:var(--wf-text-dim);
+  border:1px solid var(--wf-line);border-radius:2px;background:var(--wf-board);
+}
+
+.wf-group{
+  border:1px solid var(--wf-line);border-radius:2px;padding:8px;
+  display:flex;flex-direction:column;gap:8px;flex:none;
+  background:repeating-linear-gradient(135deg,transparent,transparent 6px,rgba(0,0,0,.02) 6px,rgba(0,0,0,.02) 12px);
+}
+.wf-group__name{
+  font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--wf-text-dim);
+}
+
+.wf-cols{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:none}
+.wf-col{display:flex;flex-direction:column;gap:8px}
+.wf-col__label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--wf-text-dim)}
+
+.wf-bar{
+  flex:none;border-top:2px solid var(--wf-line-strong);background:var(--wf-fill);
+  padding:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+
+.wf-chip{
+  font-size:9px;line-height:1;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 5px;border-radius:2px;flex:none;
+}
+.wf-chip--cta{background:var(--wf-line-strong);color:var(--wf-board)}
+.wf-chip--cond{border:1px dashed var(--wf-line);color:var(--wf-text-dim)}
+
+.wf-stage{width:100%;max-width:1320px}
+
 /* utilidades */
 [hidden]{display:none !important}
 .spacer{flex:1}
@@ -305,6 +401,13 @@ body{
 <div class="devbar">
   <span class="devbar__title">⚙ Painel de teste · fora do protótipo</span>
   <div class="devbar__group">
+    <span class="body-xs muted">Visão:</span>
+    <div class="seg" id="viewSwitch">
+      <button data-view="proto" aria-pressed="true">Protótipo</button>
+      <button data-view="wire" aria-pressed="false">Wireframe</button>
+    </div>
+  </div>
+  <div class="devbar__group" id="navGroup">
     <span class="body-xs muted">Navegação:</span>
     <div class="seg" id="modeSwitch">
       <button data-mode="fullscreen" aria-pressed="true">A · Tela cheia</button>
@@ -320,7 +423,8 @@ body{
 
 <!-- ====== APP ====== -->
 <div class="stage">
-  <div class="app">
+  <div class="wf-stage" id="wireStage" hidden></div>
+  <div class="app" id="appFrame">
     <div class="app__topbar">
       <span class="logo">EXIT<span>LAG</span></span>
       <span class="sep"></span>
@@ -345,6 +449,7 @@ body{
 </div>
 
 <script src="assets/js/data.js"></script>
+<script src="assets/js/wireframe.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>
