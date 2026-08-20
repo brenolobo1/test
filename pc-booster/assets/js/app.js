@@ -324,6 +324,7 @@ function render() {
   $('#appFrame').hidden = wire;
   $('#navGroup').style.opacity = wire ? '.35' : '';
   $('#navGroup').style.pointerEvents = wire ? 'none' : '';
+  $('#setGroup').hidden = !wire;
   if (wire) {
     $('#wireStage').innerHTML = renderWireframe();
     return;
@@ -384,6 +385,7 @@ function render() {
 /* ---------- ações ---------- */
 
 function handleAction(action, id) {
+  if (action.startsWith('wf-')) { wfAction(action, id); render(); return true; }
   switch (action) {
     case 'open-game':
       state.selectedId = (state.mode === 'inline' && state.selectedId === id) ? null : id;
@@ -451,6 +453,15 @@ $('#viewSwitch').addEventListener('click', (e) => {
   if (!btn) return;
   state.view = btn.dataset.view;
   [...$('#viewSwitch').children].forEach(b =>
+    b.setAttribute('aria-pressed', String(b === btn)));
+  render();
+});
+
+$('#setSwitch').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-set]');
+  if (!btn) return;
+  wfAction('wf-set', btn.dataset.set);
+  [...$('#setSwitch').children].forEach(b =>
     b.setAttribute('aria-pressed', String(b === btn)));
   render();
 });

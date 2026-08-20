@@ -406,6 +406,56 @@ body{
 
 .wf-stage{width:100%;max-width:1320px}
 
+/* --- visão de conjunto: janela única com drawers por cima --- */
+.wf-setbar{
+  display:flex;flex-wrap:wrap;align-items:center;gap:var(--s-sm);
+  margin-bottom:var(--s-md);
+}
+.wf-setbar__label{color:var(--wf-text-dim)}
+.wf-setbar__note{
+  flex:1 1 100%;color:var(--wf-text-dim);line-height:1.5;max-width:100ch;margin-top:6px;
+}
+.wf-setbtn{
+  font-family:inherit;font-size:11px;cursor:pointer;
+  padding:5px 10px;border-radius:2px;
+  border:1px solid var(--wf-line);background:var(--wf-board);color:var(--wf-text-dim);
+}
+.wf-setbtn[aria-pressed="true"]{background:var(--wf-line-strong);border-color:var(--wf-line-strong);color:var(--wf-board)}
+
+.wf-window{
+  background:var(--wf-board);border:1px solid var(--wf-line-strong);border-radius:3px;
+  height:620px;display:flex;flex-direction:column;overflow:hidden;
+}
+.wf-window__stack{flex:1;position:relative;overflow:hidden}
+.wf-window__base{
+  position:absolute;inset:0;overflow:auto;
+  padding:10px;display:flex;flex-direction:column;gap:8px;
+}
+.wf-window__base.is-covered::after{
+  content:'';position:absolute;inset:0;background:rgba(0,0,0,.07);pointer-events:none;
+}
+.wf-board__label--inset{margin-bottom:6px}
+
+.wf-drawer{position:absolute;top:0;bottom:0;display:flex;flex-direction:column;width:330px}
+.wf-drawer--front{right:0;z-index:3}
+.wf-drawer--back{right:310px;z-index:2}
+.wf-drawer__tab{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  padding:6px 8px;background:var(--wf-line-strong);color:var(--wf-board);flex:none;
+}
+.wf-drawer__title{font-size:12px}
+.wf-drawer__from{font-size:9px;letter-spacing:.06em;text-transform:uppercase;opacity:.7;flex:1 1 100%}
+.wf-drawer__frame{
+  flex:1;background:var(--wf-board);border-left:2px solid var(--wf-line-strong);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.wf-drawer__body{flex:1;overflow:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+
+.wf-notes{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s-lg);margin-top:var(--s-lg)}
+.wf-note{color:var(--wf-text-dim);line-height:1.5}
+.wf-note .wf-board__id{margin-right:6px}
+
+
 /* utilidades */
 [hidden]{display:none !important}
 .spacer{flex:1}
@@ -421,6 +471,15 @@ body{
     <div class="seg" id="viewSwitch">
       <button data-view="proto" aria-pressed="true">Protótipo</button>
       <button data-view="wire" aria-pressed="false">Wireframe</button>
+    </div>
+  </div>
+  <div class="devbar__group" id="setGroup" hidden>
+    <span class="body-xs muted">Wireframe:</span>
+    <div class="seg" id="setSwitch">
+      <button data-set="estudo" aria-pressed="true">Telas separadas</button>
+      <button data-set="A" aria-pressed="false">Conjunto A</button>
+      <button data-set="B" aria-pressed="false">Conjunto B</button>
+      <button data-set="C" aria-pressed="false">Conjunto C</button>
     </div>
   </div>
   <div class="devbar__group" id="navGroup">

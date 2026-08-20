@@ -32,8 +32,13 @@ A barra listrada no topo **não faz parte da interface**. Serve para comparar as
 | **C · Card expansível** | O jogo expande inline, tudo numa tela só |
 
 O seletor **Visão** alterna entre o **Protótipo** (o fluxo com dados mockados) e o **Wireframe**
-(estudo de estrutura em escala de cinza — 3 disposições por tela, sem cor, copy ou dado). No modo
-Wireframe o seletor de navegação fica desabilitado, já que os 3 modos A/B/C estão fora daquele escopo.
+(estudo de estrutura em escala de cinza). No modo Wireframe aparece um segundo seletor:
+
+- **Telas separadas** — as 3 telas lado a lado, 3 alternativas cada, para comparar disposição
+- **Conjunto A / B / C** — as três telas montadas na mesma janela: Tela 1 é a base e as Telas 2 e 3
+  abrem por cima como drawers. Botões acima da janela abrem e fecham cada drawer.
+
+O seletor de navegação fica desabilitado no modo Wireframe, já que os 3 modos A/B/C estão fora daquele escopo.
 
 O botão *Resetar protótipo* volta todos os toggles ao estado inicial.
 
@@ -64,6 +69,9 @@ Tela 1 é horizontal; Telas 2 e 3 são verticais. Três disposições por tela:
 | **3A · Leitura e depois ajuste** | Specs → configurações de sistema → reversão |
 | **3B · Painel de controle** | Controles no topo, specs recolhidas no fim, reversão fixa no rodapé |
 | **3C · Config acoplada ao componente** | Cada componente carrega seus próprios controles |
+
+Cada letra também forma um **conjunto coerente** (1A+2A+3A, 1B+2B+3B, 1C+2C+3C), visível na visão de
+conjunto com os drawers empilhados sobre a base.
 
 Blocos condicionais têm borda tracejada e chip `condicional`; blocos herdados de outro escopo têm
 fundo hachurado; pontos de ação — toggle, botões, chevron — são marcados com chip preenchido; o chip
