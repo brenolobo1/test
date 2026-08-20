@@ -8,8 +8,10 @@ const state = {
   mode: 'fullscreen',        // fullscreen | drawer | inline
   selectedId: null,
   optimized: {},             // { [gameId]: true }
-  lastAction: {},            // { [gameId]: 'on' | 'off' | 'restored' }
-  confirm: null              // { scope:'game'|'all', id }
+  lastAction: {},            // { [gameId]: 'on' | 'off' | 'restored', __all, __system }
+  confirm: null,             // { scope:'game'|'all'|'system', id }
+  systemOptimized: false,    // otimização de sistema — escopo: máquina inteira
+  systemDrawerOpen: false
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -32,6 +34,12 @@ function optBadge(g) {
     : '';
 }
 
+function systemBadge() {
+  return state.systemOptimized
+    ? `<span class="badge badge--ok"><span class="dot"></span>Otimizado</span>`
+    : `<span class="badge badge--neutral"><span class="dot"></span>Não otimizado</span>`;
+}
+
 /* ---------- tela principal ---------- */
 
 function renderMain() {
@@ -46,13 +54,17 @@ function renderMain() {
       </p>
     </div>
 
-    <!-- ② Hardware detectado (mockado) -->
+    <!-- ② Hardware detectado (mockado) + entrada para otimização de sistema -->
     <div class="section">
       <div class="section__head">
         <h2 class="heading-sm">Hardware detectado <span class="ph-tag">mock</span></h2>
         <span class="body-xs dim">Detectado há 2 min</span>
       </div>
-      <div class="card">
+      <div class="card card--clickable" data-action="open-hw">
+        <div class="row-between" style="margin-bottom:12px">
+          ${systemBadge()}
+          <span class="chev">›</span>
+        </div>
         <div class="hw-grid">
           ${['cpu','gpu','ram'].map(k => `
             <div class="hw-item">
@@ -313,6 +325,102 @@ function renderAdjustments(g) {
   </div>`;
 }
 
+/* ---------- drawer de otimização de sistema (escopo: máquina inteira) ---------- */
+
+function renderSystemFeedback(on) {
+  const act = state.lastAction.__system;
+  if (act === 'on') {
+    return `<div class="msg msg--info" style="margin-top:16px">
+      <span class="msg__icon">i</span>
+      <span class="ph">Mensagem — a otimização de sistema foi aplicada agora, para a máquina inteira.</span>
+    </div>`;
+  }
+  if (act === 'off') {
+    return `<div class="msg msg--neutral" style="margin-top:16px">
+      <span class="msg__icon">i</span>
+      <span class="ph">Mensagem — a otimização de sistema foi desligada.</span>
+    </div>`;
+  }
+  if (!on) {
+    return `<div class="msg msg--neutral" style="margin-top:16px">
+      <span class="msg__icon">i</span>
+      <span class="ph">Mensagem de estado — otimização de sistema desligada.</span>
+    </div>`;
+  }
+  return '';
+}
+
+function renderSystemDrawerBody() {
+  const on = !!state.systemOptimized;
+
+  return `
+  <div class="stack-md">
+
+    <div class="hw-grid" style="grid-template-columns:1fr">
+      ${['cpu','gpu','ram'].map(k => `
+        <div class="hw-item">
+          <div class="hw-item__label">${HARDWARE[k].label}</div>
+          <div class="hw-item__value">${HARDWARE[k].value}</div>
+          <div class="hw-item__meta">${HARDWARE[k].meta}</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="row-between">
+        <div>
+          <div class="body-lg">Otimização de sistema</div>
+          <div class="body-xs ph" style="margin-top:4px">Lorem ipsum — texto de apoio do toggle; escopo é a máquina inteira, não um jogo específico.</div>
+        </div>
+        <div class="switch" role="switch" tabindex="0" aria-checked="${on}" data-action="toggle-system">
+          <span class="switch__label muted">${on ? 'Ligado' : 'Desligado'}</span>
+          <span class="switch__track"><span class="switch__thumb"></span></span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="body-sm muted" style="margin-bottom:8px">Ajustes incluídos</div>
+      <div class="stack-sm">
+        ${SYSTEM_LAYERS.map(l => `
+          <div class="layer ${on ? '' : 'layer--off'}">
+            <div class="layer__icon">◧</div>
+            <div class="layer__txt">
+              <div class="layer__name">${l.name}</div>
+              <div class="layer__desc">${l.desc}</div>
+            </div>
+            <span class="badge ${on ? 'badge--ok' : 'badge--neutral'}">${on ? 'Aplicada' : 'Inativa'}</span>
+          </div>`).join('')}
+      </div>
+
+      ${renderSystemFeedback(on)}
+    </div>
+
+    ${on ? renderAdjustments({ engine: 'Sistema', adjustments: null, gpuMetric: null }) : ''}
+
+    <div class="card">
+      <div class="row-between">
+        <div>
+          <div class="body-lg">Restaurar configuração original</div>
+          <div class="body-xs ph" style="margin-top:4px">Lorem ipsum — texto explicando o que é desfeito no escopo de sistema.</div>
+        </div>
+        ${state.confirm && state.confirm.scope === 'system'
+          ? `<div class="row">
+               <span class="body-xs ph">Confirmar?</span>
+               <button class="btn btn--ghost btn--sm" data-action="cancel-confirm">Cancelar</button>
+               <button class="btn btn--primary btn--sm" data-action="do-restore-system">Restaurar</button>
+             </div>`
+          : `<button class="btn btn--danger" data-action="ask-restore-system">Restaurar configuração original</button>`}
+      </div>
+      ${state.lastAction.__system === 'restored'
+        ? `<div class="msg msg--success" style="margin-top:16px">
+             <span class="msg__icon">✓</span>
+             <span class="ph">Mensagem de confirmação — configuração original de sistema restaurada.</span>
+           </div>` : ''}
+    </div>
+
+  </div>`;
+}
+
 /* ---------- shell: 3 modos de navegação ---------- */
 
 function render() {
@@ -380,6 +488,20 @@ function render() {
   }
 
   // C · card expansível já é renderizado dentro de renderGameRow
+
+  // drawer de otimização de sistema — independente dos 3 modos de navegação
+  const hwDrawer = $('#hwDrawer');
+  const hwOverlay = $('#hwOverlay');
+  if (state.systemDrawerOpen) {
+    $('#hwDrawerBody').innerHTML = renderSystemDrawerBody();
+    hwDrawer.classList.add('is-open');
+    hwDrawer.setAttribute('aria-hidden', 'false');
+    hwOverlay.classList.add('is-open');
+  } else {
+    hwDrawer.classList.remove('is-open');
+    hwDrawer.setAttribute('aria-hidden', 'true');
+    hwOverlay.classList.remove('is-open');
+  }
 }
 
 /* ---------- ações ---------- */
@@ -389,10 +511,32 @@ function handleAction(action, id) {
   switch (action) {
     case 'open-game':
       state.selectedId = (state.mode === 'inline' && state.selectedId === id) ? null : id;
+      state.systemDrawerOpen = false;
       state.confirm = null;
       break;
     case 'close-detail':
       state.selectedId = null;
+      state.confirm = null;
+      break;
+    case 'open-hw':
+      state.systemDrawerOpen = true;
+      state.selectedId = null;
+      state.confirm = null;
+      break;
+    case 'close-hw':
+      state.systemDrawerOpen = false;
+      state.confirm = null;
+      break;
+    case 'toggle-system': {
+      const on = !state.systemOptimized;
+      state.systemOptimized = on;
+      state.lastAction.__system = on ? 'on' : 'off';
+      break;
+    }
+    case 'ask-restore-system': state.confirm = { scope:'system' }; break;
+    case 'do-restore-system':
+      state.systemOptimized = false;
+      state.lastAction.__system = 'restored';
       state.confirm = null;
       break;
     case 'toggle-opt': {
@@ -424,6 +568,7 @@ document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-action]');
   if (el) { handleAction(el.dataset.action, el.dataset.id); return; }
   if (e.target.id === 'overlay') handleAction('close-detail');
+  if (e.target.id === 'hwOverlay') handleAction('close-hw');
 });
 
 document.addEventListener('keydown', (e) => {
@@ -433,6 +578,7 @@ document.addEventListener('keydown', (e) => {
     handleAction(el.dataset.action, el.dataset.id);
   }
   if (e.key === 'Escape' && state.selectedId) handleAction('close-detail');
+  if (e.key === 'Escape' && state.systemDrawerOpen) handleAction('close-hw');
 });
 
 /* ---------- painel de teste ---------- */
@@ -471,6 +617,8 @@ $('#resetState').addEventListener('click', () => {
   state.optimized = {};
   state.lastAction = {};
   state.confirm = null;
+  state.systemOptimized = false;
+  state.systemDrawerOpen = false;
   render();
 });
 

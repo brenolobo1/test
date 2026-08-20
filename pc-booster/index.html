@@ -185,6 +185,8 @@ body{
 }
 .game--clickable{cursor:pointer}
 .game--clickable:hover{border-color:var(--base-300);background:var(--base-500)}
+.card--clickable{cursor:pointer;transition:.15s}
+.card--clickable:hover{border-color:var(--base-300);background:var(--base-500)}
 .game.is-open{border-color:var(--nebula)}
 .game__row{display:flex;align-items:center;gap:var(--s-lg);padding:var(--s-lg)}
 .game__thumb{
@@ -518,6 +520,17 @@ body{
           <button class="btn-close" data-action="close-detail" aria-label="Fechar">✕</button>
         </div>
         <div class="drawer__body" id="drawerBody"></div>
+      </aside>
+      <div class="overlay" id="hwOverlay"></div>
+      <aside class="drawer" id="hwDrawer" aria-hidden="true">
+        <div class="drawer__head">
+          <div>
+            <div class="heading-sm">Otimização de sistema</div>
+            <div class="body-xs dim">Hardware detectado · escopo: máquina inteira</div>
+          </div>
+          <button class="btn-close" data-action="close-hw" aria-label="Fechar">✕</button>
+        </div>
+        <div class="drawer__body" id="hwDrawerBody"></div>
       </aside>
     </div>
   </div>

@@ -11,6 +11,19 @@ const HARDWARE = {
   ram: { label: 'Memória', value: '8 GB DDR5', meta: '1×8 GB · single channel · 4800 MHz' }
 };
 
+/* Otimização de nível SISTEMA — vale para a máquina inteira, não para um jogo específico.
+   Escopo distinto da otimização por jogo (camadas de engine + driver GPU por jogo). */
+const SYSTEM_LAYERS = [
+  {
+    name: 'Tier de otimização do sistema',
+    desc: 'Prioridade de processo elevada para o jogo em primeiro plano'
+  },
+  {
+    name: 'Perfil de driver GPU — global',
+    desc: 'Perfil aplicado à máquina inteira, fora do escopo de um jogo específico'
+  }
+];
+
 /* Status possíveis:
    ok      → roda bem
    tune    → otimização recomendada

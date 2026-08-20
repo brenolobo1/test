@@ -14,7 +14,9 @@ python3 -m http.server 8000   # http://localhost:8000/pc-booster/
 
 ## Fluxo coberto
 
-1. Resumo de hardware detectado (CPU / GPU / Memória)
+1. Resumo de hardware detectado (CPU / GPU / Memória), com badge **Otimizado / Não otimizado** e
+   entrada para o drawer de **otimização de sistema** (escopo: máquina inteira — tier de otimização
+   do sistema + perfil de driver GPU global, com seu próprio toggle e reversão)
 2. Lista de 4 jogos instalados com status: *roda bem* / *otimização recomendada* / *abaixo do recomendado*
 3. Alerta de hardware com **3 níveis de gravidade** (leve / moderado / severo) + tabela comparativa no formato de tiers do PCGamingWiki
 4. Toggle de otimização por jogo, cobrindo as **duas camadas**: config de engine (Unreal/Unity) e perfil de driver GPU
