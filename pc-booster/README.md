@@ -39,22 +39,35 @@ O botão *Resetar protótipo* volta todos os toggles ao estado inicial.
 
 ## Estudo de wireframe
 
-Três disposições alternativas por tela, variando ordem/hierarquia, posição dos CTAs e agrupamento:
+Estrutura em escala de cinza, com **dois níveis de configuração** explícitos:
 
-| Tela 1 | Variação |
+- **nível sistema** — vale para a máquina inteira (perfil de GPU global, tiers de sistema operacional)
+- **nível jogo** — vale só para aquele jogo (perfil de driver por jogo)
+- **config de engine** — global *por engine*, atravessa os dois níveis; cada alternativa a resolve de um jeito
+
+Tela 1 é horizontal; Telas 2 e 3 são verticais. Três disposições por tela:
+
+| Tela 1 · horizontal | Onde vive o nível sistema |
 |---|---|
-| **1A · Linear** | Ordem direta, CTAs dentro dos cards, ação global no fim |
-| **1B · Lista dominante** | Cabeçalho + hardware agrupados num resumo; ação global vira barra fixa |
-| **1C · Tarefa primeiro** | Lista no topo; hardware desce e é agrupado com a ação global |
+| **1A · Duas faixas** | Sistema é uma faixa acima da lista de jogos — hierarquia explícita |
+| **1B · Coluna de sistema** | Coluna de escopo à esquerda, sempre visível; lista à direita |
+| **1C · Sistema na lista** | Sistema é a primeira linha da lista, irmão dos jogos |
 
-| Tela 2 | Variação |
+| Tela 2 · vertical | Como a herança do sistema aparece |
 |---|---|
-| **2A · Linear** | Diagnóstico → controle → resultado → reversão, CTAs dentro dos cards |
-| **2B · Controle no topo** | Toggle sobe para junto do cabeçalho; reversão vira barra fixa |
-| **2C · Duas colunas** | Diagnóstico à esquerda, ação e resultado à direita |
+| **2A · Herança etiquetada** | Cada camada carrega a etiqueta do seu escopo, herdadas com fundo hachurado |
+| **2B · Dois blocos de escopo** | "Específico deste jogo" separado de "vem do sistema" (read-only) |
+| **2C · Escopo sob demanda** | Herança escondida atrás de um bloco expansível |
 
-Blocos condicionais (*alerta de hardware*, *o que foi ajustado*) aparecem com borda tracejada e chip
-`condicional`. Pontos de ação — toggle, botões, chevron — são marcados com chip preenchido.
+| Tela 3 · vertical (nova) | Detalhe de hardware |
+|---|---|
+| **3A · Leitura e depois ajuste** | Specs → configurações de sistema → reversão |
+| **3B · Painel de controle** | Controles no topo, specs recolhidas no fim, reversão fixa no rodapé |
+| **3C · Config acoplada ao componente** | Cada componente carrega seus próprios controles |
+
+Blocos condicionais têm borda tracejada e chip `condicional`; blocos herdados de outro escopo têm
+fundo hachurado; pontos de ação — toggle, botões, chevron — são marcados com chip preenchido; o chip
+de contorno indica o **escopo** do bloco.
 
 ## Convenções
 
