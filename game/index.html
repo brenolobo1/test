@@ -75,6 +75,8 @@ input[type=range]{width:100%;accent-color:var(--red);height:28px}
 #rotate .phone{width:40px;height:66px;border:3px solid var(--ink);border-radius:8px;animation:turn 2s ease-in-out infinite}
 @keyframes turn{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
 @media (orientation:portrait) and (max-width:900px){#rotate{display:flex}}
+body.force-play #rotate{display:none}
+#rotate .btn{margin-top:8px}
 @media (prefers-reduced-motion:reduce){#rotate .phone{animation:none;transform:rotate(-90deg)}}
 </style>
 
@@ -138,7 +140,7 @@ input[type=range]{width:100%;accent-color:var(--red);height:28px}
   </div>
 </div>
 
-<div id="rotate"><div class="phone"></div><h2>Gire o aparelho</h2><p>O jogo é na horizontal.</p></div>
+<div id="rotate"><div class="phone"></div><h2>Gire o aparelho</h2><p>O jogo foi feito para a horizontal. Se o aparelho já está deitado, a janela do jogo é que está estreita: abra o artefato em tela cheia ou continue assim mesmo.</p><button id="forceBtn" class="btn" type="button">Jogar assim mesmo</button></div>
 
 <script>
 (() => {
@@ -863,7 +865,8 @@ $('resumeBtn').addEventListener('click', resumeGame);
 $('menuBtn').addEventListener('click', toMenu);
 $('menuBtn2').addEventListener('click', toMenu);
 $('pauseBtn').addEventListener('click', pauseGame);
-window.addEventListener('resize', () => { layout(); if (innerHeight > innerWidth && innerWidth <= 900) pauseGame(); });
+window.addEventListener('resize', layout);
+$('forceBtn').addEventListener('click', () => { document.body.classList.add('force-play'); layout(); });
 syncUI();
 layout();
 // first frame as soon as fonts settle, so labels don't render in a fallback face
