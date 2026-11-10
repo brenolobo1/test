@@ -74,8 +74,7 @@ input[type=range]{width:100%;accent-color:var(--red);height:28px}
 #rotate p{color:var(--muted);margin:0}
 #rotate .phone{width:40px;height:66px;border:3px solid var(--ink);border-radius:8px;animation:turn 2s ease-in-out infinite}
 @keyframes turn{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
-@media (orientation:portrait) and (max-width:900px){#rotate{display:flex}}
-body.force-play #rotate{display:none}
+body.need-rotate #rotate{display:flex}
 #rotate .btn{margin-top:8px}
 @media (prefers-reduced-motion:reduce){#rotate .phone{animation:none;transform:rotate(-90deg)}}
 </style>
@@ -140,7 +139,7 @@ body.force-play #rotate{display:none}
   </div>
 </div>
 
-<div id="rotate"><div class="phone"></div><h2>Gire o aparelho</h2><p>O jogo foi feito para a horizontal. Se o aparelho já está deitado, a janela do jogo é que está estreita: abra o artefato em tela cheia ou continue assim mesmo.</p><button id="forceBtn" class="btn" type="button">Jogar assim mesmo</button></div>
+<div id="rotate"><div class="phone"></div><h2>Gire o aparelho</h2><p>O jogo foi feito para a horizontal.</p><button id="forceBtn" class="btn" type="button">Jogar assim mesmo</button></div>
 
 <script>
 (() => {
@@ -866,7 +865,24 @@ $('menuBtn').addEventListener('click', toMenu);
 $('menuBtn2').addEventListener('click', toMenu);
 $('pauseBtn').addEventListener('click', pauseGame);
 window.addEventListener('resize', layout);
-$('forceBtn').addEventListener('click', () => { document.body.classList.add('force-play'); layout(); });
+// Ask the device, not the frame: inside the Claude app the frame can be tall while the iPad is lying down.
+let forced = false;
+function deviceLandscape(){
+  const o = screen.orientation && screen.orientation.type;
+  if (o) return o.indexOf('landscape') === 0;
+  if (typeof window.orientation === 'number') return Math.abs(window.orientation) === 90;
+  return innerWidth >= innerHeight;
+}
+function checkRotate(){
+  const need = !forced && !deviceLandscape();
+  document.body.classList.toggle('need-rotate', need);
+  if (need) pauseGame();
+}
+$('forceBtn').addEventListener('click', () => { forced = true; checkRotate(); layout(); });
+if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', () => setTimeout(() => { checkRotate(); layout(); }, 120));
+window.addEventListener('orientationchange', () => setTimeout(() => { checkRotate(); layout(); }, 120));
+window.addEventListener('resize', checkRotate);
+checkRotate();
 syncUI();
 layout();
 // first frame as soon as fonts settle, so labels don't render in a fallback face
