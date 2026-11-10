@@ -49,6 +49,22 @@ output{color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:0}
 .seg button+button{border-left:1px solid var(--line)}
 .seg button[aria-pressed="true"]{background:var(--panel-2);color:var(--ink);box-shadow:inset 0 -2px 0 var(--red)}
 input[type=range]{width:100%;accent-color:var(--red);height:28px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:4px;padding:8px 10px;font-size:14px;cursor:pointer;background:transparent}
+.chip input{width:18px;height:18px;accent-color:var(--red);margin:0}
+.chip:has(input:checked){background:var(--panel-2);border-color:#5a4580}
+.chip:has(input:disabled){opacity:.7;cursor:default}
+.solo{position:absolute;z-index:4;right:calc(14px + env(safe-area-inset-right,0px));top:36%;width:84px;height:84px;border-radius:50%;
+  border:2px solid var(--line);color:var(--muted);font:700 15px var(--ui);letter-spacing:.12em;cursor:pointer;touch-action:manipulation;
+  background:conic-gradient(var(--yellow) calc(var(--fill,0)*1%), var(--panel) 0)}
+.solo span{display:grid;place-items:center;position:absolute;inset:6px;border-radius:50%;background:var(--panel)}
+.solo.ready{color:#1a0508;border-color:var(--yellow);animation:ready .6s ease-in-out infinite alternate}
+.solo.ready span{background:var(--yellow)}
+.solo.on{border-color:var(--ink)}
+.solo.on span{background:var(--ink);color:#1a0508}
+.solo:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+@keyframes ready{to{box-shadow:0 0 22px rgba(255,210,63,.7)}}
+@media (prefers-reduced-motion:reduce){.solo.ready{animation:none;box-shadow:0 0 16px rgba(255,210,63,.6)}}
 .toggle{display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer}
 .toggle input{width:20px;height:20px;accent-color:var(--red)}
 .cta,.btn{font:700 16px var(--ui);letter-spacing:.12em;text-transform:uppercase;border-radius:4px;cursor:pointer;padding:14px 18px;border:1px solid var(--line)}
@@ -81,6 +97,7 @@ body.need-rotate #rotate{display:flex}
 
 <canvas id="game"></canvas>
 <button id="pauseBtn" class="pause" hidden aria-label="Pausar">II</button>
+<button id="soloBtn" class="solo" hidden aria-label="Ativar solo"><span>SOLO</span></button>
 
 <div id="menu" class="overlay">
   <div class="panel menu">
@@ -91,7 +108,8 @@ body.need-rotate #rotate{display:flex}
       <ul class="lanes" aria-hidden="true">
         <li style="background:var(--red)"></li><li style="background:var(--cyan)"></li><li style="background:var(--yellow)"></li><li style="background:var(--purple)"></li>
       </ul>
-      <p class="hint">Teclado: <kbd>D</kbd> <kbd>F</kbd> <kbd>J</kbd> <kbd>K</kbd> · <kbd>Espaço</kbd> pausa. Música em Mi menor, 140 BPM, cerca de 1 minuto.</p>
+      <p class="hint" style="margin-bottom:10px"><b>Segurar:</b> crânio com cauda de ossos. Toque e mantenha o dedo até a cauda acabar.<br><b>Deslizar:</b> crânios ligados por uma linha. Toque o primeiro e arraste o dedo pelas cores seguintes.<br><b>Solo:</b> acertos enchem o botão amarelo. Ative e, por alguns segundos, basta passar o dedo pelas cores para defender.</p>
+      <p class="hint">Teclado: <kbd>D</kbd> <kbd>F</kbd> <kbd>J</kbd> <kbd>K</kbd> · <kbd>Espaço</kbd> solo · <kbd>Esc</kbd> pausa. Música em Mi menor, 140 BPM, cerca de 1 minuto.</p>
     </div>
     <div class="settings">
       <div class="field">
@@ -108,6 +126,15 @@ body.need-rotate #rotate{display:flex}
         <label for="offset">Ajuste de sincronia <output id="offOut">0 ms</output></label>
         <input type="range" id="offset" min="-100" max="250" step="5" value="0">
         <small>Se os acertos saem “tarde”, aumente. A tela de resultado sugere o valor.</small>
+      </div>
+      <div class="field">
+        <span class="label">Formas de defesa</span>
+        <div class="chips">
+          <label class="chip"><input type="checkbox" checked disabled> Tocar</label>
+          <label class="chip"><input type="checkbox" id="mHold"> Segurar</label>
+          <label class="chip"><input type="checkbox" id="mSlide"> Deslizar</label>
+          <label class="chip"><input type="checkbox" id="mSolo"> Solo</label>
+        </div>
       </div>
       <label class="toggle"><input type="checkbox" id="noDamage"> Modo treino (sem dano)</label>
       <button id="playBtn" class="cta" type="button">Tocar</button>
@@ -181,8 +208,9 @@ const lerp = (a,b,t) => a + (b-a)*t;
 const ease = t => 1 - Math.pow(1-t, 3);
 
 /* ---------- settings ---------- */
-const settings = { diff:1, speed:1, offset:0, noDamage:false };
+const settings = { diff:1, speed:1, offset:0, noDamage:false, hold:true, slide:true, solo:true };
 try { Object.assign(settings, JSON.parse(localStorage.getItem('riff-settings') || '{}')); } catch(e) {}
+const SOLO_DUR = 4*BAR, SOLO_WIN = .2;
 const saveSettings = () => { try { localStorage.setItem('riff-settings', JSON.stringify(settings)); } catch(e) {} };
 
 /* ---------- audio ---------- */
@@ -266,6 +294,27 @@ function lead(lane, bar, quiet){
     o.connect(a); o.start(t); o.stop(t + .55);
   });
 }
+function leadHold(lane, bar){ // sustained note while a hold is kept; returns a release function
+  if (!AC) return () => {};
+  const t = AC.currentTime, m = rootOf(clamp(bar, 0, TOTAL_BARS-1)) + 12 + LEAD_STEP[lane];
+  const a = AC.createGain(); a.gain.setValueAtTime(0, t); a.gain.linearRampToValueAtTime(.3, t + .005); a.gain.setTargetAtTime(.18, t + .05, .3);
+  a.connect(leadIn);
+  const lfo = AC.createOscillator(), depth = AC.createGain(); lfo.frequency.value = 5.5; depth.gain.value = 18; lfo.connect(depth);
+  const os = [['sawtooth',0],['square',7]].map(([type, det]) => {
+    const o = AC.createOscillator(); o.type = type; o.frequency.value = midi(m); o.detune.value = det;
+    depth.connect(o.detune); o.connect(a); o.start(t); return o;
+  });
+  lfo.start(t + .25);
+  return () => { const e = AC.currentTime; a.gain.cancelScheduledValues(e); a.gain.setValueAtTime(a.gain.value, e); a.gain.exponentialRampToValueAtTime(.0008, e + .12); os.forEach(o => o.stop(e + .15)); lfo.stop(e + .15); };
+}
+function soloSound(){
+  if (!AC) return;
+  const t = AC.currentTime;
+  [0, 3, 7, 12].forEach((s, i) => {
+    const o = AC.createOscillator(), a = AC.createGain(); o.type = 'sawtooth'; o.frequency.value = midi(64 + s);
+    env(a, t + i*.05, .25, .5); o.connect(a); a.connect(leadIn); o.start(t + i*.05); o.stop(t + i*.05 + .55);
+  });
+}
 function hurtSound(){
   if (!AC) return;
   const t = AC.currentTime, o = AC.createOscillator(), a = AC.createGain();
@@ -326,7 +375,7 @@ function buildMusic(){
 }
 
 function rng(seed){ return () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-let notes = [];
+let notes = [], chainList = [];
 function buildChart(diff){
   const R = rng(1337 + diff*101);
   const D = {
@@ -336,13 +385,30 @@ function buildChart(diff){
     bridge: { on:[.8,1,1],      off:[0,0,0],    ch:[.2,.35,.5], slots:[0,4] },
     boss:   { on:[.8,.95,1],    off:[.1,.45,.75], ch:[.08,.15,.22] },
   };
-  const out = []; let lane = 1, chordId = 0;
-  const add = (t, l, boss, ch = -1) => out.push({ t, lane:l, boss, chord:ch, done:false, res:null, seed:R()*10 });
+  const out = []; let lane = 1, chordId = 0, chainId = 0;
+  const add = (t, l, boss, ch = -1) => { const n = { t, lane:l, boss, chord:ch, done:false, res:null, seed:R()*10, type:'tap' }; out.push(n); return n; };
+  const chains = [];
   for (let bar = 0; bar < 32; bar++){
     const name = sectionOf(bar).name;
     if (name === 'intro' && bar < 2){ add(bar*BAR, bar === 0 ? 0 : 3, false); continue; }
     const c = D[name];
+    // slide chain: a sweep across the neck, one colour per eighth
+    let chainSlots = null;
+    if (settings.slide && (name === 'verse' || name === 'boss') && bar % 2 === 1 && R() < [.45,.55,.65][diff]){
+      const len = diff === 0 ? 3 : (R() < .5 ? 3 : 4), s0 = R() < .5 ? 0 : 4;
+      const down = R() < .5, startLane = down ? Math.floor(R()*(5-len)) : 3 - Math.floor(R()*(5-len));
+      const id = chainId++, list = [];
+      let prev = null;
+      for (let k = 0; k < len; k++){
+        const n = add(bar*BAR + (s0 + k)*EIGHTH, startLane + (down ? k : -k), name === 'boss');
+        n.type = 'slide'; n.chainId = id; n.idx = k; n.prev = prev; prev = n; list.push(n);
+      }
+      chains.push(list);
+      chainSlots = [s0, s0 + len - 1];
+      lane = list[list.length-1].lane;
+    }
     for (let s = 0; s < 8; s++){
+      if (chainSlots && s >= chainSlots[0] - 1 && s <= chainSlots[1] + 1) continue;
       if (c.slots && !c.slots.includes(s)) continue;
       const p = (s % 2 === 0 ? c.on : c.off)[diff];
       if (R() >= p) continue;
@@ -358,7 +424,23 @@ function buildChart(diff){
   }
   if (diff === 0) add(32*BAR, 1, false);
   else { add(32*BAR, 0, false, chordId); add(32*BAR, 3, false, chordId); }
+  // holds: the long chords of the bridge, and some sustained hits in the chorus
+  if (settings.hold){
+    for (const n of out){
+      if (n.type !== 'tap') continue;
+      const bar = Math.floor(n.t/BAR + 1e-6), s = Math.round((n.t - bar*BAR)/EIGHTH), name = sectionOf(bar).name;
+      if (name === 'bridge'){ n.type = 'hold'; n.dur = 3*EIGHTH; }
+      else if (name === 'chorus' && (s === 0 || s === 3) && R() < [.35,.4,.5][diff]){ n.type = 'hold'; n.dur = 2*EIGHTH; }
+    }
+    // nothing else may land in a lane while it is being held
+    const holds = out.filter(n => n.type === 'hold');
+    for (let i = out.length - 1; i >= 0; i--){
+      const n = out[i];
+      if (holds.some(h => h !== n && h.lane === n.lane && n.t > h.t - 1e-6 && n.t <= h.t + h.dur + EIGHTH*.6)) out.splice(i, 1);
+    }
+  }
   out.sort((a,b) => a.t - b.t);
+  chainList = chains;
   return out;
 }
 
@@ -411,18 +493,23 @@ let boss = null;
 let particles = [], texts = [], beams = [], misses = [], banners = [];
 const press = [0,0,0,0];
 let shakeUntil = 0, hurtUntil = 0, lastNow = -9, endInfo = null;
+let meter = 0, soloUntil = -99, holding = [];
+const pointers = new Map();   // pointerId (or 'k0'..'k3' for keys) -> { lane }
 
 const songNow = () => AC ? AC.currentTime - t0 - latency : 0;
 const speedPx = () => W*.4*settings.speed;
+const soloOn = now => settings.solo && now < soloUntil;
 
 function startGame(){
   initAudio();
   AC.resume();
   makeRunBus();
   buildMusic();
+  releaseAllHolds();
   notes = buildChart(settings.diff);
   score = 0; combo = 0; maxCombo = 0; hp = 100; mult = 1; stray = 0; scan = 0;
-  stats = { perfect:0, great:0, ok:0, miss:0 };
+  meter = 0; soloUntil = -99; pointers.clear();
+  stats = { perfect:0, great:0, ok:0, miss:0, holdsDone:0, holdsTotal:notes.filter(n => n.type === 'hold').length, chainsDone:0, chainsTotal:chainList.length, solos:0 };
   deltas = [];
   particles = []; texts = []; beams = []; misses = []; banners = []; endInfo = null; lastNow = -9;
   const bossNotes = notes.filter(n => n.boss).length;
@@ -432,22 +519,25 @@ function startGame(){
   t0 = AC.currentTime + .4 + 4*BEAT;   // lead-in before count-in finishes
   state = 'play';
   show('menu', false); show('pause', false); show('results', false);
-  $('pauseBtn').hidden = false;
+  playButtons(true);
 }
 function show(id, on){ $(id).hidden = !on; }
+function playButtons(on){ $('pauseBtn').hidden = !on; $('soloBtn').hidden = !(on && settings.solo); }
 function pauseGame(){
   if (state !== 'play') return;
-  state = 'paused'; AC.suspend(); show('pause', true); $('pauseBtn').hidden = true;
+  state = 'paused'; AC.suspend(); show('pause', true); playButtons(false);
 }
 function resumeGame(){
   if (state !== 'paused') return;
-  AC.resume(); state = 'play'; show('pause', false); $('pauseBtn').hidden = false;
+  AC.resume(); state = 'play'; show('pause', false); playButtons(true);
 }
 function toMenu(){
+  releaseAllHolds();
   if (musicBus) { try { musicBus.disconnect(); } catch(e){} musicBus = null; }
   if (AC && AC.state === 'suspended') AC.resume();
-  state = 'menu'; show('pause', false); show('results', false); show('menu', true); $('pauseBtn').hidden = true;
+  state = 'menu'; show('pause', false); show('results', false); show('menu', true); playButtons(false);
 }
+function releaseAllHolds(){ for (const n of holding) if (n.release) n.release(); holding = []; }
 
 function schedule(){
   if (state !== 'play' || !AC) return;
@@ -465,57 +555,139 @@ function laneAt(x, y){
   for (let i = 0; i < 4; i++){ const dx = (x - hitX[i])*.6, dy = y - laneY[i], d = dx*dx + dy*dy; if (d < bd){ bd = d; best = i; } }
   return best;
 }
-function input(lane){
-  if (state !== 'play') return;
-  const now = songNow();
-  press[lane] = performance.now();
+const pointerLane = (x, y) => x < W*.3 ? -1 : laneAt(x, y);   // a thumb resting on the left does nothing
+function laneHeldBy(lane){ for (const [id, p] of pointers) if (p.lane === lane) return id; return null; }
+function findNote(lane, now, win, filter){
   let best = null, bd = Infinity;
   for (let i = scan; i < notes.length; i++){
     const n = notes[i];
-    if (n.t - now > WIN.ok) break;
-    if (n.done || n.lane !== lane) continue;
+    if (n.t - now > win) break;
+    if (n.done || n.lane !== lane || (filter && !filter(n))) continue;
     const d = Math.abs(n.t - now);
     if (d < bd){ bd = d; best = n; }
   }
-  const bar = Math.floor(Math.max(0, now)/BAR);
-  if (best && bd <= WIN.ok){ hit(best, now - best.t, now); lead(lane, bar, false); }
-  else { stray++; lead(lane, bar, true); }
+  return bd <= win ? best : null;
 }
+// kind: 'down' = a tap or key press; 'enter' = a finger sliding into this colour
+function input(lane, kind, pid){
+  if (state !== 'play' || lane < 0) return;
+  const now = songNow(), solo = soloOn(now);
+  press[lane] = performance.now();
+  const bar = Math.floor(Math.max(0, now)/BAR);
+  const n = kind === 'down'
+    ? findNote(lane, now, solo ? SOLO_WIN : WIN.ok)
+    : findNote(lane, now, solo ? SOLO_WIN : WIN.ok, solo ? null : m => m.type === 'slide');
+  if (n){ hit(n, now - n.t, now, pid, false); if (n.type !== 'hold') lead(lane, bar, false); }
+  else if (kind === 'down'){ stray++; lead(lane, bar, true); }
+}
+function canvasPoint(e){ const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
 cv.addEventListener('pointerdown', e => {
   e.preventDefault();
-  const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
-  if (x < W*.33) return;               // resting thumb on the left does nothing
-  input(laneAt(x, y));
+  const lane = pointerLane(...canvasPoint(e));
+  if (lane < 0) return;
+  pointers.set(e.pointerId, { lane });
+  try { cv.setPointerCapture(e.pointerId); } catch(_) {}
+  input(lane, 'down', e.pointerId);
 }, { passive:false });
+cv.addEventListener('pointermove', e => {
+  const p = pointers.get(e.pointerId);
+  if (!p) return;
+  const lane = pointerLane(...canvasPoint(e));
+  if (lane === p.lane) return;
+  const from = p.lane;
+  p.lane = lane;
+  if (lane < 0) return;
+  // a fast swipe can skip a colour between two move events: count the ones it crossed
+  if (from >= 0 && Math.abs(lane - from) > 1){ const d = Math.sign(lane - from); for (let l = from + d; l !== lane; l += d) input(l, 'enter', e.pointerId); }
+  input(lane, 'enter', e.pointerId);
+});
+const pointerUp = e => pointers.delete(e.pointerId);
+cv.addEventListener('pointerup', pointerUp);
+cv.addEventListener('pointercancel', pointerUp);
 document.addEventListener('keydown', e => {
   if (e.repeat) return;
   const k = e.key.toLowerCase();
-  if (k === ' ' || k === 'escape'){ e.preventDefault(); state === 'play' ? pauseGame() : state === 'paused' && resumeGame(); return; }
+  if (k === 'escape' || k === 'p'){ e.preventDefault(); state === 'play' ? pauseGame() : state === 'paused' && resumeGame(); return; }
+  if (k === ' '){ e.preventDefault(); activateSolo(); return; }
   const lane = LANES.findIndex(L => L.keys.includes(k));
-  if (lane >= 0) input(lane);
+  if (lane >= 0){ pointers.set('k' + lane, { lane }); input(lane, 'down', 'k' + lane); }
+});
+document.addEventListener('keyup', e => {
+  const lane = LANES.findIndex(L => L.keys.includes(e.key.toLowerCase()));
+  if (lane >= 0) pointers.delete('k' + lane);
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
 
+/* ---------- solo ---------- */
+function activateSolo(){
+  if (state !== 'play' || !settings.solo || meter < 100) return;
+  const now = songNow();
+  if (now < 0 || soloOn(now)) return;
+  meter = 0; soloUntil = now + SOLO_DUR; stats.solos++;
+  banners.push({ text:'SOLO! DESLIZE PELAS CORES', at:performance.now(), color:'#ffd23f' });
+  soloSound();
+}
+function addMeter(v, now){ if (settings.solo && !soloOn(now)) meter = Math.min(100, meter + v); }
+function updateSoloBtn(now){
+  const b = $('soloBtn'), on = soloOn(now);
+  b.classList.toggle('ready', meter >= 100 && !on);
+  b.classList.toggle('on', on);
+  b.style.setProperty('--fill', on ? (soloUntil - now)/SOLO_DUR*100 : meter);
+  const label = on ? 'SOLO!' : 'SOLO';
+  if (b.firstChild.textContent !== label) b.firstChild.textContent = label;
+}
+
 /* ---------- judging ---------- */
-function hit(n, delta, now){
+function hit(n, delta, now, pid, auto){
   n.done = true;
-  const ad = Math.abs(delta);
-  const res = ad <= WIN.perfect ? 'perfect' : ad <= WIN.great ? 'great' : 'ok';
-  n.res = res; stats[res]++; deltas.push(delta*1000);
+  const solo = soloOn(now), ad = Math.abs(delta);
+  let res = ad <= WIN.perfect ? 'perfect' : ad <= WIN.great ? 'great' : 'ok';
+  if (solo && res === 'ok') res = 'great';
+  n.res = res; stats[res]++;
+  if (!auto && !solo) deltas.push(delta*1000);
   combo++; maxCombo = Math.max(maxCombo, combo);
   mult = combo >= 30 ? 4 : combo >= 20 ? 3 : combo >= 10 ? 2 : 1;
-  score += { perfect:300, great:200, ok:100 }[res] * mult;
+  score += { perfect:300, great:200, ok:100 }[res] * mult * (solo ? 2 : 1);
   hp = Math.min(100, hp + (res === 'perfect' ? 1.2 : res === 'great' ? .6 : 0));
-  const x = hitX[n.lane] - (n.t - now)*speedPx(), y = laneY[n.lane];
+  addMeter(res === 'perfect' ? 5 : res === 'great' ? 3 : 1, now);
+  const x = hitX[n.lane] - (n.t - now)*speedPx(), y = laneY[n.lane], pn = performance.now();
   burst(x, y, LANES[n.lane].color, res === 'perfect' ? 22 : 14);
-  beams.push({ x, y, lane:n.lane, at:performance.now() });
+  beams.push({ x, y, lane:n.lane, at:pn });
   const label = { perfect:'PERFEITO', great:'ÓTIMO', ok:'BOM' }[res];
   const ms = Math.round(delta*1000);
-  texts.push({ text:label, sub: res === 'perfect' ? '' : (ms < 0 ? `cedo ${-ms}ms` : `tarde ${ms}ms`), x:hitX[n.lane] - sk*3.2, y, color:LANES[n.lane].color, at:performance.now() });
+  texts.push({ text:label, sub: res === 'perfect' || solo ? '' : (ms < 0 ? `cedo ${-ms}ms` : `tarde ${ms}ms`), x:hitX[n.lane] - sk*3.2, y, color:LANES[n.lane].color, at:pn });
+  if (n.type === 'hold'){
+    n.holdBy = pid; n.holdDone = false;
+    n.release = leadHold(n.lane, Math.floor(Math.max(0, now)/BAR));
+    holding.push(n);
+  }
+  if (n.type === 'slide'){
+    const chain = chainList[n.chainId];
+    if (chain.every(m => m.res && m.res !== 'miss')){
+      stats.chainsDone++; addMeter(8, now); score += 250*chain.length*mult;
+      texts.push({ text:'CORRENTE!', sub:'', x:hitX[n.lane] - sk*3.2, y:y + sk*1.6, color:'#f3ecff', at:pn });
+    }
+  }
   if (n.boss && !boss.dead && now >= BOSS_T - BAR){
     boss.hp -= res === 'perfect' ? 1.15 : res === 'great' ? 1 : .6;
-    boss.flash = performance.now();
-    if (boss.hp <= 0){ boss.hp = 0; boss.dead = true; boss.deadAt = now; banners.push({ text:'CHEFÃO DERROTADO', at:performance.now(), color:'#ffd23f' }); }
+    boss.flash = pn;
+    if (boss.hp <= 0){ boss.hp = 0; boss.dead = true; boss.deadAt = now; banners.push({ text:'CHEFÃO DERROTADO', at:pn, color:'#ffd23f' }); }
+  }
+}
+function finishHold(n, ok, now){
+  n.holdDone = true;
+  if (n.release) n.release();
+  const pn = performance.now(), y = laneY[n.lane], x = hitX[n.lane] - sk*3.2;
+  const beats = Math.round(n.dur/EIGHTH), frac = clamp((now - n.t)/n.dur, 0, 1);
+  if (ok){
+    stats.holdsDone++; addMeter(6, now);
+    score += 150*beats*mult*(soloOn(now) ? 2 : 1);
+    burst(hitX[n.lane], y, LANES[n.lane].color, 26);
+    texts.push({ text:'SEGUROU', sub:'', x, y:y + sk*1.6, color:LANES[n.lane].color, at:pn });
+  } else {
+    score += Math.round(150*beats*frac*.5)*mult;
+    combo = 0; mult = 1;
+    texts.push({ text:'SOLTOU', sub:`${Math.round(frac*100)}%`, x, y:y + sk*1.6, color:'#8c7fa6', at:pn });
   }
 }
 function miss(n, now){
@@ -537,11 +709,34 @@ function update(now){
   const pn = performance.now(), dt = Math.min(.05, (pn - lastPerf)/1000); lastPerf = pn;
   if (state === 'play'){
     while (scan < notes.length && notes[scan].done) scan++;
+    const solo = soloOn(now), bar = Math.floor(Math.max(0, now)/BAR);
     for (let i = scan; i < notes.length; i++){
       const n = notes[i];
-      if (n.t > now) break;
-      if (!n.done && now - n.t > WIN.ok) miss(n, now);
+      if (n.t - now > WIN.perfect) break;
+      if (n.done) continue;
+      if (now - n.t > (solo ? SOLO_WIN : WIN.ok)){ miss(n, now); continue; }
+      if (Math.abs(n.t - now) > WIN.perfect) continue;
+      // a finger already resting in the colour: during the solo it defends anything,
+      // otherwise only the next link of a chain whose previous link was hit
+      const pid = laneHeldBy(n.lane);
+      if (pid !== null && (solo || (n.type === 'slide' && n.prev && n.prev.res && n.prev.res !== 'miss'))){
+        hit(n, now - n.t, now, pid, true);
+        if (n.type !== 'hold') lead(n.lane, bar, false);
+      }
     }
+    for (const n of holding){
+      if (n.holdDone) continue;
+      const end = n.t + n.dur, p = pointers.get(n.holdBy);
+      if (now >= end){ finishHold(n, true, now); continue; }
+      if (!p || p.lane !== n.lane){
+        const other = laneHeldBy(n.lane);
+        if (other !== null && solo){ n.holdBy = other; continue; }
+        finishHold(n, now >= end - .1, now); continue;
+      }
+      if (Math.random() < .5) particles.push({ x:hitX[n.lane], y:laneY[n.lane], vx:(Math.random()-.5)*120, vy:-60 - Math.random()*140, life:.7, color:LANES[n.lane].color, r:2 + Math.random()*2 });
+    }
+    holding = holding.filter(n => !n.holdDone);
+    updateSoloBtn(now);
     if (lastNow < BRIDGE_T && now >= BRIDGE_T) banners.push({ text:'O CHEFÃO SE APROXIMA', at:pn, color:'#ff4d4d' });
     lastNow = now;
     if (hp <= 0) finish('dead');
@@ -565,7 +760,7 @@ function update(now){
 }
 function finish(kind){
   state = 'end';
-  $('pauseBtn').hidden = true;
+  playButtons(false); releaseAllHolds();
   if (musicBus){ const gnode = musicBus; gnode.gain.setTargetAtTime(0, AC.currentTime, .25); setTimeout(() => { try { gnode.disconnect(); } catch(e){} }, 1500); }
   const judged = stats.perfect + stats.great + stats.ok + stats.miss;
   const acc = judged ? (stats.perfect + stats.great*.8 + stats.ok*.5)/judged : 0;
@@ -575,6 +770,9 @@ function finish(kind){
   $('resTitle').style.color = kind === 'dead' ? 'var(--red)' : boss.dead ? 'var(--yellow)' : 'var(--ink)';
   $('resSub').textContent = `Pontuação ${score.toLocaleString('pt-BR')} · Nota ${grade} · Precisão ${(acc*100).toFixed(1)}%` + (settings.noDamage ? ' · modo treino' : '');
   const cells = [['Perfeito', stats.perfect], ['Ótimo', stats.great], ['Bom', stats.ok], ['Errou', stats.miss], ['Combo máx.', maxCombo], ['Toques fora', stray]];
+  if (settings.hold) cells.push(['Segurou', `${stats.holdsDone}/${stats.holdsTotal}`]);
+  if (settings.slide) cells.push(['Correntes', `${stats.chainsDone}/${stats.chainsTotal}`]);
+  if (settings.solo) cells.push(['Solos usados', stats.solos]);
   $('stats').innerHTML = cells.map(([k,v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('');
   const avg = deltas.length ? deltas.reduce((a,b) => a+b, 0)/deltas.length : 0;
   const suggested = clamp(Math.round((settings.offset + avg)/5)*5, -100, 250);
@@ -623,6 +821,11 @@ function drawNeck(now){
     g.beginPath(); g.moveTo(p.x - Math.cos(ang)*sk*1.5, p.y - Math.sin(ang)*sk*1.5); g.lineTo(p.x + Math.cos(ang)*sk*1.5, p.y + Math.sin(ang)*sk*1.5); g.stroke();
   }
   const pn = performance.now();
+  if (soloOn(now)){   // during the solo the whole neck is one live surface
+    const a = curveAt(1), b = curveAt(n-2), lg = g.createLinearGradient(a.x, a.y, b.x, b.y);
+    LANES.forEach((L, i) => lg.addColorStop(.15 + i*.23, L.color));
+    g.globalAlpha = .45 + Math.sin(pn/90)*.15; g.strokeStyle = lg; g.lineWidth = sk*2.4; strokeCurve(1, n-2); g.globalAlpha = 1;
+  }
   for (let i = 0; i < 4; i++){
     const L = LANES[i], f = clamp(1 - (pn - press[i])/160, 0, 1);
     g.strokeStyle = L.color; g.lineWidth = 5 + f*5;
@@ -653,26 +856,59 @@ function skull(x, y, r, col, horns){
   g.strokeStyle = '#0b0710'; g.lineWidth = Math.max(1, r*.08);
   g.beginPath(); for (let k = -1; k <= 1; k++){ g.moveTo(x + k*r*.22, y + r*.55); g.lineTo(x + k*r*.22, y + r*.95); } g.stroke();
 }
+function boneTail(x0, x1, y, L){   // the body of a hold enemy, from its tail end (x0) to its head (x1)
+  x0 = Math.max(x0, -sk);
+  if (x1 - x0 < 2) return;
+  g.fillStyle = `rgba(${L.rgb},.25)`; g.fillRect(x0, y - sk*.34, x1 - x0, sk*.68);
+  g.fillStyle = L.color;
+  const step = sk*.72;
+  for (let x = x1 - step; x > x0 + sk*.3; x -= step){ g.beginPath(); g.ellipse(x, y, sk*.2, sk*.38, 0, 0, Math.PI*2); g.fill(); }
+  g.beginPath(); g.moveTo(x0 - sk*.2, y); g.lineTo(x0 + sk*.5, y - sk*.32); g.lineTo(x0 + sk*.5, y + sk*.32); g.closePath(); g.fill();
+}
+function tag(text, x, y, color){
+  g.font = `700 ${Math.round(sk*.4)}px "Chakra Petch", system-ui`; g.textAlign = 'center'; g.textBaseline = 'bottom';
+  g.fillStyle = color; g.fillText(text, x, y);
+}
 function drawNotes(now){
   const sp = speedPx(), lead = (W + sk*4)/sp;
-  const chordPos = {};
+  const chordPos = {}, chainPos = {};
+  // enemies being held: head pinned to the receptor, body draining into it
+  for (const n of holding){
+    const L = LANES[n.lane], y = laneY[n.lane], hx = hitX[n.lane];
+    boneTail(hx - (n.t + n.dur - now)*sp, hx, y, L);
+    skull(hx, y + Math.sin(now*40)*sk*.06, sk*.95, '#f3ecff', n.boss);
+  }
   for (let i = scan; i < notes.length; i++){
     const n = notes[i];
     if (n.t - now > lead) break;
     if (n.done) continue;
     const x = hitX[n.lane] - (n.t - now)*sp;
-    if (x < -sk*3) continue;
-    const y = laneY[n.lane] + Math.sin(now*9 + n.seed)*sk*.12;
+    if (x < -sk*3 - (n.dur || 0)*sp) continue;
+    const y = laneY[n.lane] + (n.type === 'hold' ? 0 : Math.sin(now*9 + n.seed)*sk*.12);
     if (n.chord >= 0){ (chordPos[n.chord] = chordPos[n.chord] || []).push({ x, y }); }
+    if (n.type === 'slide'){ (chainPos[n.chainId] = chainPos[n.chainId] || []).push({ x, y, n }); }
     const L = LANES[n.lane], r = sk*(n.boss ? 1.08 : .92);
-    const tg = g.createLinearGradient(x - r*4, 0, x, 0);
-    tg.addColorStop(0, `rgba(${L.rgb},0)`); tg.addColorStop(1, `rgba(${L.rgb},.35)`);
-    g.fillStyle = tg; g.fillRect(x - r*4, y - r*.35, r*4, r*.7);
+    if (n.type === 'hold') boneTail(x - n.dur*sp, x, y, L);
+    else {
+      const tg = g.createLinearGradient(x - r*4, 0, x, 0);
+      tg.addColorStop(0, `rgba(${L.rgb},0)`); tg.addColorStop(1, `rgba(${L.rgb},.35)`);
+      g.fillStyle = tg; g.fillRect(x - r*4, y - r*.35, r*4, r*.7);
+    }
     skull(x, y, r, L.color, n.boss);
+    if (n.type === 'hold' && x > 0) tag('SEGURE', x, y - r*1.25, L.color);
   }
   g.strokeStyle = 'rgba(243,236,255,.55)'; g.lineWidth = 3; g.setLineDash([4, 5]);
   for (const k in chordPos){ const p = chordPos[k]; if (p.length === 2){ g.beginPath(); g.moveTo(p[0].x, p[0].y + sk); g.lineTo(p[1].x, p[1].y - sk); g.stroke(); } }
   g.setLineDash([]);
+  // slide chains: a solid glowing link from each skull to the next, drawn over them
+  for (const k in chainPos){
+    const p = chainPos[k];
+    g.strokeStyle = 'rgba(243,236,255,.85)'; g.lineWidth = sk*.22; g.shadowColor = '#f3ecff'; g.shadowBlur = 10;
+    if (p.length > 1){ g.beginPath(); p.forEach((q, i) => i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y)); g.stroke(); }
+    g.shadowBlur = 0;
+    const first = p[0];
+    if (first.n.idx === 0 && first.x > 0) tag('DESLIZE', first.x, first.y - sk*1.25, '#f3ecff');
+  }
   // missed skulls flying at the guitarist
   const pn = performance.now();
   for (const m of misses){
@@ -852,6 +1088,7 @@ function syncUI(){
   $('speed').value = settings.speed; $('speedOut').textContent = (+settings.speed).toFixed(1) + '×';
   $('offset').value = settings.offset; $('offOut').textContent = `${settings.offset > 0 ? '+' : ''}${settings.offset} ms`;
   $('noDamage').checked = !!settings.noDamage;
+  $('mHold').checked = !!settings.hold; $('mSlide').checked = !!settings.slide; $('mSolo').checked = !!settings.solo;
 }
 document.querySelectorAll('#diff button').forEach(b => b.addEventListener('click', () => { settings.diff = +b.dataset.v; saveSettings(); syncUI(); }));
 $('speed').addEventListener('input', e => { settings.speed = +e.target.value; saveSettings(); syncUI(); });
@@ -864,6 +1101,8 @@ $('resumeBtn').addEventListener('click', resumeGame);
 $('menuBtn').addEventListener('click', toMenu);
 $('menuBtn2').addEventListener('click', toMenu);
 $('pauseBtn').addEventListener('click', pauseGame);
+$('soloBtn').addEventListener('pointerdown', e => { e.preventDefault(); activateSolo(); });
+[['mHold','hold'],['mSlide','slide'],['mSolo','solo']].forEach(([id, key]) => $(id).addEventListener('change', e => { settings[key] = e.target.checked; saveSettings(); }));
 window.addEventListener('resize', layout);
 // Ask the device, not the frame: inside the Claude app the frame can be tall while the iPad is lying down.
 let forced = false;
@@ -883,6 +1122,8 @@ if (screen.orientation && screen.orientation.addEventListener) screen.orientatio
 window.addEventListener('orientationchange', () => setTimeout(() => { checkRotate(); layout(); }, 120));
 window.addEventListener('resize', checkRotate);
 checkRotate();
+// read-only handle for automated play tests
+window.__riff = { get notes(){ return notes; }, songNow, get state(){ return state; }, get meter(){ return meter; }, get stats(){ return stats; } };
 syncUI();
 layout();
 // first frame as soon as fonts settle, so labels don't render in a fallback face
